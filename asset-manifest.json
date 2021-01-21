@@ -1,0 +1,23 @@
+{
+  "files": {
+    "main.css": "/excel2pic/static/css/main.8c8b27cf.chunk.css",
+    "main.js": "/excel2pic/static/js/main.2aa6e24d.chunk.js",
+    "main.js.map": "/excel2pic/static/js/main.2aa6e24d.chunk.js.map",
+    "runtime-main.js": "/excel2pic/static/js/runtime-main.41601d99.js",
+    "runtime-main.js.map": "/excel2pic/static/js/runtime-main.41601d99.js.map",
+    "static/js/2.a95f2232.chunk.js": "/excel2pic/static/js/2.a95f2232.chunk.js",
+    "static/js/2.a95f2232.chunk.js.map": "/excel2pic/static/js/2.a95f2232.chunk.js.map",
+    "static/js/3.1734161f.chunk.js": "/excel2pic/static/js/3.1734161f.chunk.js",
+    "static/js/3.1734161f.chunk.js.map": "/excel2pic/static/js/3.1734161f.chunk.js.map",
+    "index.html": "/excel2pic/index.html",
+    "static/css/main.8c8b27cf.chunk.css.map": "/excel2pic/static/css/main.8c8b27cf.chunk.css.map",
+    "static/js/2.a95f2232.chunk.js.LICENSE.txt": "/excel2pic/static/js/2.a95f2232.chunk.js.LICENSE.txt",
+    "static/media/logo.6ce24c58.svg": "/excel2pic/static/media/logo.6ce24c58.svg"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.41601d99.js",
+    "static/js/2.a95f2232.chunk.js",
+    "static/css/main.8c8b27cf.chunk.css",
+    "static/js/main.2aa6e24d.chunk.js"
+  ]
+}
