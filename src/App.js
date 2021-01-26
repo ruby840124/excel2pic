@@ -1,149 +1,101 @@
-import React, { Component } from 'react';
-import Konva from 'konva';
-import { Image } from 'react-konva';
+import React from 'react';
+import XLSX from "xlsx";
+import { Accordion, Card, Button } from 'react-bootstrap';
+import InputFiles from "react-input-files";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import PreviewImg from './PreviewImg';
 import './App.css';
+
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state ={
-      image: null,
-      imageUrl: '',
-      stage: null, 
-      canvasWidth: 250, 
-      canvasHeight: 250, 
-      boxArray:['診所名稱', '評論者', '評論']};
+      ratio: 2,
+      canvasWidth: 800, 
+      canvasHeight: 600,
+      bgImg: null, 
+      excelData: null,
+      excelTitleData: null,
+      excelHint: false,
+      bgImgHint: false
+    };
   }
 
-  componentDidMount(){
-    this.initStage();
-  }
-
-  initStage = () => {
-    const {canvasWidth, canvasHeight} = this.state;
-    const stage = new Konva.Stage({
-      x:0,
-      y:0,
-      container: 'container',
-      width: canvasWidth,
-      height: canvasHeight,
-    });
-    for (let i = 0; i < 3; i++) {
-      this.addBox(stage, i);
+  //匯入excel檔案
+  onImportExcel = files => {
+    const fileReader = new FileReader();
+    for (let index = 0; index < files.length; index++) {
+        fileReader.name = files[index].name;
     }
+    fileReader.onload = event => {
+        try {
+            const validExts = [".xlsx", ".xls"];
+            const fileExt = event.target.name;
+
+            const fileExtlastof = fileExt.substring(fileExt.lastIndexOf("."));
+            if (validExts.indexOf(fileExtlastof) === -1) 
+              throw new Error("檔案類型錯誤，只可接受：" + validExts.toString() + "檔案名稱");
+
+            const { result } = event.target;
+            const workbook = XLSX.read(result, { type: "binary" });
+            let data = []; 
+            for (const sheet in workbook.Sheets) {
+                if (workbook.Sheets.hasOwnProperty(sheet)) {
+                    data = data.concat(
+                        XLSX.utils.sheet_to_json(workbook.Sheets[sheet])
+                    );
+                }
+            }
+
+            if(data.length === 0) 
+              throw new Error("excel沒有任何資料");
+
+            this.setState({excelHint: false});
+            this.getExcelTitle(data);
+        } catch (e) {
+          alert(e);
+          return;
+        }
+    };
+    fileReader.readAsBinaryString(files[0]);
+  };
+
+  //取得excel欄位所有標題
+  getExcelTitle = (data) => {
+    let titleArray = [];
+    for (var key in data[0])
+        titleArray.push(key);
+    console.log(titleArray);
+    this.setState({excelData: data, excelTitleData: titleArray});
   }
 
-  addBox = (stage, i) => {
-    const {canvasWidth, boxArray} = this.state;
-    const layer = new Konva.Layer();
-    const box = new Konva.Group({
-        Zindex: 10,
-        x: canvasWidth / 2 - 50,
-        y: 10 + i*40,
-        width: 100,
-        height: 25,
-        fill: '#00D2FF',
-        stroke: 'black',
-        strokeWidth: 4,
-        draggable: true,
-    });
-
-    box.add(new Konva.Rect({
-      width: 100,
-      height: 25,
-      fill: 'lightblue'
-    }));
-
-    box.add(new Konva.Text({
-      text: boxArray[i],
-      fontSize: 18,
-      fontFamily: 'Calibri',
-      fill: '#000',
-      width: 100,
-      padding: 5,
-      align: 'center'
-    }));
-
-    box.on('mouseover', function () {
-        document.body.style.cursor = 'pointer';
-    });
-
-    box.on('mouseout', function () {
-        document.body.style.cursor = 'default';
-    });
-
-    layer.add(box);
-    stage.add(layer);
-    this.setState({stage: stage});
-  }
-
-  download = () => {
-    const {stage} = this.state;
-    const a = document.createElement('a');
-    const event = new MouseEvent('click');
-    a.download = 'test.jpg';
-    a.href = stage.toDataURL({ pixelRatio: 1 });
-    a.dispatchEvent(event);
-  }
-
+  //匯入圖片檔案
   handleImageChange = (e) => {
     let reader = new FileReader();
     let file = e.target.files[0];
 
     reader.onloadend = () => {
-      this.setState({
-				imageUrl: reader.result
-        });
-      this.image2Canvas();
+        const img = new window.Image();
+        img.onload = () => {
+          this.setState({bgImgHint: false});
+          console.log("loading");
+        }
+        img.src = reader.result;
+        this.setState({bgImg: reader.result});
     }
     reader.readAsDataURL(file);
   }
 
-  checkImageSize = (imgWidth, imgHeight, img) => {
-    const {stage} = this.state;
-    const uploadBgBlock = document.getElementById("uploadBgBlock");
-    const bgBlockWidth = uploadBgBlock.offsetWidth;
-    const bgBlockHeight = uploadBgBlock.offsetHeight;
-    const layer = new Konva.Layer();
-    let size = 0.2;
-
-    console.log(bgBlockWidth, bgBlockHeight);
-    console.log(imgHeight, imgWidth);
-    while(bgBlockWidth < imgWidth || bgBlockHeight < imgHeight){
-      imgHeight  = imgHeight / size;
-      imgWidth  = imgWidth / size;
-      size = size + 0.2;
+  changeRatio = () => {
+    const value = document.getElementById("bgRatio").value;
+    if(value === "small"){
+      this.setState({ratio: 2});
+    }else if(value === "middle"){
+      this.setState({ratio: 1.8});
+    }else if(value === "big"){
+      this.setState({ratio: 1.6});
     }
-
-    const bg = new Konva.Image({
-      x: 0,
-      y: 0,
-      image: img,
-      width: imgWidth,
-      height: imgHeight,
-    });
-    layer.add(bg);
-    layer.batchDraw();
-    stage.width(imgWidth);
-    stage.height(imgHeight);
-    stage.add(layer);
-
-    for (let i = 0; i < 3; i++) {
-      this.addBox(stage, i);
-    }
-
-    this.setState({stage: stage, canvasWidth: imgWidth, canvasHeight: imgHeight});
-
-  }
-
-  image2Canvas = (e) => {
-    const {imageUrl} = this.state;
-    const uploadBgBlock = document.getElementById("uploadBgBlock");
-    const img = new window.Image();
-    img.onload = () => {
-      this.checkImageSize(img.width, img.height, img);
-    }
-    img.src = imageUrl;
   }
 
   download = () =>{
@@ -155,8 +107,22 @@ class App extends React.Component {
     a.dispatchEvent(event);
   }
 
+  updatePreviewImg = () => {
+    const {bgImg, excelData} = this.state;
+    if(!bgImg && !excelData){
+      alert("請上傳背景圖&excel檔案");
+      this.setState({excelHint: true, bgImgHint: true});
+    }else if(!bgImg){
+      alert("請上傳背景圖");
+      this.setState({bgImgHint: true});
+    }else if(!excelData){
+      alert("請上傳excel檔案");
+      this.setState({excelHint: true});
+    }
+  }
+
   render() {
-    const {canvasWidth, canvasHeight} = this.state;
+    const {canvasWidth, canvasHeight, excelHint, bgImgHint, ratio} = this.state;
     return (
       <div className="App">
         <div className="topBlock">
@@ -165,14 +131,56 @@ class App extends React.Component {
         <div className="cotentBlock">
           <div className="uploadBlock">
             <div className="uploadBgBlock" id="uploadBgBlock">
-              <input type="file" onChange={this.handleImageChange} accept="image/*" />
-              <div className="container" id="container" style={{width: canvasWidth, height: canvasHeight}}></div>
+              <div style={{width: "80%", marginTop: "20px", fontFamily: "sans-serif"}}>
+              <Accordion defaultActiveKey="0">
+                <Card>
+                  <Accordion.Toggle as={Card.Header} style={{fontWeight: "bold", color: "#0066CC"}} eventKey="0">
+                    step 1 : 選擇預覽圖片大小
+                  </Accordion.Toggle>
+                  <Accordion.Collapse eventKey="0">
+                    <Card.Body>
+                        <select id="bgRatio" onChange={this.changeRatio}>
+                  　        <option value="small">small</option>
+                  　        <option value="middle">middle</option>
+                            <option value="big">big</option>
+                        </select>
+                    </Card.Body>
+                  </Accordion.Collapse>
+                </Card>
+                <Card>
+                  <Accordion.Toggle as={Card.Header} style={{fontWeight: "bold", color: excelHint? "red":"#0066CC"}} eventKey="1">
+                    step 2 : 上傳excel檔案
+                  </Accordion.Toggle>
+                  <Accordion.Collapse eventKey="1">
+                    <Card.Body>
+                        <InputFiles accept=".xlsx, .xls" onChange={this.onImportExcel}>
+                            <button className="btn btn-primary">上傳excel資料</button>
+                        </InputFiles>
+                    </Card.Body>
+                  </Accordion.Collapse>
+                </Card>
+                <Card>
+                  <Accordion.Toggle as={Card.Header} style={{fontWeight: "bold", color: bgImgHint? "red":"#0066CC"}} eventKey="2">
+                    step 3 : 上傳背景圖片
+                  </Accordion.Toggle>
+                  <Accordion.Collapse eventKey="2">
+                    <Card.Body>
+                    <label className="btn btn-primary" style={{marginBottom: "0"}}>
+                        {"上傳背景圖片"}
+                        <input type="file" style={{display: "none"}} onChange={this.handleImageChange} accept="image/*"/>
+                    </label>
+                    </Card.Body>
+                  </Accordion.Collapse>
+                </Card>
+              </Accordion>
+              <Button variant="info" style={{width: "100%", marginTop: "10px"}} onClick={this.updatePreviewImg}>產生預覽結果</Button>{' '}
+              </div>
+              <PreviewImg canvasWidth={canvasWidth/ratio} canvasHeight={canvasHeight/ratio}/>
             </div>
-            <div className="uploadExcelBlock">
-                <span>excelBlock</span>
+            <div className="generateImageBlock">
+              {"請先選擇資料及圖片，並預覽結果"}
             </div>
           </div>
-          <button className="readyButton" onClick={this.download}>開始生成圖片</button>
         </div>
       </div>
     );
