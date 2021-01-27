@@ -1,5 +1,6 @@
 import React from 'react';
 import Konva from 'konva';
+import './App.css';
 
 const initialState = {
 
@@ -19,6 +20,12 @@ class PreviewImg extends React.Component{
 
   }
 
+  componentDidUpdate(prevProps){
+    if(this.props.bgImg !== prevProps.bgImg){
+      this.updateBgImg();
+    }
+  }
+
   initStage = () => {
     const {canvasWidth, canvasHeight} = this.props;
     const stage = new Konva.Stage({
@@ -29,6 +36,24 @@ class PreviewImg extends React.Component{
       height: canvasHeight,
     });
     this.setState({stage: stage});
+  }
+
+  updateBgImg = () => {
+    const {bgImg, canvasWidth, canvasHeight} = this.props;
+    const {stage} = this.state;
+    const layer = new Konva.Layer();
+    const bg = new Konva.Image({
+      x: 0,
+      y: 0,
+      image: bgImg,
+      width: canvasWidth,
+      height: canvasHeight,
+    });
+    layer.add(bg);
+    layer.batchDraw();
+    stage.width(canvasWidth);
+    stage.height(canvasHeight);
+    stage.add(layer);
   }
 
   /*addBox = (stage, i, excelTitleData) => {
@@ -169,7 +194,7 @@ class PreviewImg extends React.Component{
   render() {
       const {canvasHeight, canvasWidth} = this.props;
     return (
-        <div className="container" id="container" style={{width: canvasWidth, height: canvasHeight}}>123</div>
+        <div className="container" id="container" style={{width: canvasWidth, height: canvasHeight}}></div>
     );
   }
 }

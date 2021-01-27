@@ -6,7 +6,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import PreviewImg from './PreviewImg';
 import './App.css';
 
-
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -18,9 +17,74 @@ class App extends React.Component {
       excelData: null,
       excelTitleData: null,
       excelHint: false,
-      bgImgHint: false
+      bgImgHint: false,
+      lastUploadBgOfWidth: 1,
+      lastUploadBgOfHeight: 1,
     };
   }
+
+  componentDidMount() {
+    this.initCanvas();
+    window.addEventListener('resize', this.updateCanvas);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.updateCanvas);
+  }
+
+  //初始化canvas大小
+  initCanvas = () => {
+    const uploadBg = document.getElementById("uploadBgBlock");
+    const uploadBgOfWidth = uploadBg.offsetWidth;
+    const uploadBgOfHeight = uploadBg.offsetHeight;
+    let canvasWidth = 800;
+    let canvasHeight = 600;
+    let size = 0.1;
+
+    while(uploadBgOfWidth < canvasWidth || uploadBgOfHeight < canvasHeight){
+      canvasWidth  = canvasWidth / size;
+      canvasHeight  = canvasHeight / size;
+      size = size + 0.1;
+    }
+    this.setState({
+      canvasWidth: canvasWidth, 
+      canvasHeight: canvasHeight, 
+      lastUploadBgOfWidth: uploadBgOfWidth, 
+      lastUploadBgOfHeight: uploadBgOfHeight});
+  }
+
+  //使canvas隨著網頁縮放
+  updateCanvas = () => {
+    const {lastUploadBgOfWidth, lastUploadBgOfHeight, canvasWidth, canvasHeight} = this.state;
+    const uploadBg = document.getElementById("uploadBgBlock");
+    const uploadBgOfWidth = uploadBg.offsetWidth;
+    const uploadBgOfHeight = uploadBg.offsetHeight;
+    let ratio;
+      if(uploadBgOfWidth !== lastUploadBgOfWidth){
+        ratio = uploadBgOfWidth/lastUploadBgOfWidth;
+      }else if(uploadBgOfHeight !== lastUploadBgOfHeight) {
+        ratio = uploadBgOfHeight/lastUploadBgOfHeight;
+      }else {
+        if(uploadBgOfWidth/lastUploadBgOfWidth > uploadBgOfHeight/lastUploadBgOfHeight){
+          ratio = uploadBgOfWidth/lastUploadBgOfWidth;
+        }else{
+          ratio = uploadBgOfHeight/lastUploadBgOfHeight;
+        }
+      }
+      if(canvasWidth*ratio > 800 || canvasHeight*ratio > 600){
+        this.setState({
+          canvasWidth: 800, 
+          canvasHeight: 600, 
+          lastUploadBgOfWidth: uploadBgOfWidth, 
+          lastUploadBgOfHeight: uploadBgOfHeight});
+      }else {
+        this.setState({
+          canvasWidth: canvasWidth*ratio, 
+          canvasHeight: canvasHeight*ratio, 
+          lastUploadBgOfWidth: uploadBgOfWidth, 
+          lastUploadBgOfHeight: uploadBgOfHeight});
+      }
+    }
 
   //匯入excel檔案
   onImportExcel = files => {
@@ -78,11 +142,9 @@ class App extends React.Component {
     reader.onloadend = () => {
         const img = new window.Image();
         img.onload = () => {
-          this.setState({bgImgHint: false});
-          console.log("loading");
+          this.setState({bgImgHint: false, bgImg: img});
         }
         img.src = reader.result;
-        this.setState({bgImg: reader.result});
     }
     reader.readAsDataURL(file);
   }
@@ -90,11 +152,11 @@ class App extends React.Component {
   changeRatio = () => {
     const value = document.getElementById("bgRatio").value;
     if(value === "small"){
-      this.setState({ratio: 2});
+      this.setState({ratio: 2.2});
     }else if(value === "middle"){
-      this.setState({ratio: 1.8});
+      this.setState({ratio: 2});
     }else if(value === "big"){
-      this.setState({ratio: 1.6});
+      this.setState({ratio: 1.8});
     }
   }
 
@@ -122,7 +184,7 @@ class App extends React.Component {
   }
 
   render() {
-    const {canvasWidth, canvasHeight, excelHint, bgImgHint, ratio} = this.state;
+    const {canvasWidth, canvasHeight, excelHint, bgImgHint, ratio, bgImg} = this.state;
     return (
       <div className="App">
         <div className="topBlock">
@@ -139,7 +201,7 @@ class App extends React.Component {
                   </Accordion.Toggle>
                   <Accordion.Collapse eventKey="0">
                     <Card.Body>
-                        <select id="bgRatio" onChange={this.changeRatio}>
+                        <select id="bgRatio" onChange={this.changeRatio} defaultValue={"middle"}>
                   　        <option value="small">small</option>
                   　        <option value="middle">middle</option>
                             <option value="big">big</option>
@@ -175,7 +237,7 @@ class App extends React.Component {
               </Accordion>
               <Button variant="info" style={{width: "100%", marginTop: "10px"}} onClick={this.updatePreviewImg}>產生預覽結果</Button>{' '}
               </div>
-              <PreviewImg canvasWidth={canvasWidth/ratio} canvasHeight={canvasHeight/ratio}/>
+              <PreviewImg canvasWidth={canvasWidth/ratio} canvasHeight={canvasHeight/ratio} bgImg={bgImg}/>
             </div>
             <div className="generateImageBlock">
               {"請先選擇資料及圖片，並預覽結果"}
